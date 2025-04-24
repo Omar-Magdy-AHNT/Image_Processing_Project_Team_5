@@ -115,10 +115,7 @@ while True:
                 direction = 'L' if horizontal_offset > 0 else 'R'
                 command = f"{direction}{pwm:03}\n".encode()
                 arduino.write(command)
-            else:
-                arduino.write(b"S000\n")
-            # === P-Control Logic ===
-            if area > min_area and area < max_area and abs(horizontal_offset) < offset_threshold:
+            elif area > min_area and area < max_area and abs(horizontal_offset) < offset_threshold:
                 pwm = min(int(Kpa *(max_area-area)), max_pwm)
                 direction = 'F' if area < max_area else 'S'
                 command = f"{direction}{pwm:03}\n".encode()
