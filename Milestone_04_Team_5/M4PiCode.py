@@ -74,6 +74,7 @@ while True:
     frame = cv.flip(frame, 1)
     scaled1 = cv.resize(frame, None, fx=0.25, fy=0.25, interpolation=cv.INTER_LINEAR)
     scaled = equalize_y_channel(scaled1)
+    scaled = cv.GaussianBlur(scaled, (5, 5), 0)
 
     hsv = cv.cvtColor(scaled, cv.COLOR_BGR2HSV)
     mask = cv.inRange(hsv, lower_green, upper_green)
