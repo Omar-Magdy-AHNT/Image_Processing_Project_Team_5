@@ -4,8 +4,8 @@ import time
 import serial
 
 # Initialize serial connection to Arduino
-arduino = serial.Serial('COM4', 9600, timeout=1)
-time.sleep(2)
+#arduino = serial.Serial('COM4', 9600, timeout=1)
+#time.sleep(2)
 
 # Initialize camera
 camera = cv.VideoCapture(0)
@@ -18,8 +18,11 @@ frame_count = 0
 fps = 0
 
 # Color bounds for green object (in HSV)
-lower_green = np.array([35, 100, 100])
+lower_green = np.array([25, 50, 100])
 upper_green = np.array([85, 255, 255])
+
+brightness_value = 50     # +ve to brighten, -ve to darken
+contrast_factor = 0.8    
 
 # Morphological kernel
 kernel = np.ones((5, 5), np.uint8)
@@ -42,11 +45,21 @@ while True:
         fps = frame_count / elapsed_time
         prev_time = current_time
         frame_count = 0
-
+    cv.imshow('Original', frame)
     frame = cv.flip(frame, 1)
+    cv.imshow('Flipped', frame)
     scaled = cv.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv.INTER_LINEAR)
+    cv.imshow('Scaled', scaled)
 
-    hsv = cv.cvtColor(scaled, cv.COLOR_BGR2HSV)
+
+    brightened = cv.convertScaleAbs(scaled, alpha=1.0, beta=brightness_value)
+    cv.imshow('Brightened', brightened)
+    final = cv.convertScaleAbs(brightened, alpha=contrast_factor, beta=0)
+    cv.imshow('Contrast', final)
+    final = cv.GaussianBlur(final, (5, 5), 0)
+    cv.imshow('Blurred', final)
+
+    hsv = cv.cvtColor(final, cv.COLOR_BGR2HSV)
     mask = cv.inRange(hsv, lower_green, upper_green)
     segmented = cv.bitwise_and(scaled, scaled, mask=mask)
 
@@ -76,17 +89,17 @@ while True:
                 pwm = min(int(Kp * abs(horizontal_offset)), max_pwm)
                 direction = 'L' if horizontal_offset > 0 else 'R'
                 command = f"{direction}{pwm:03}\n".encode()
-                arduino.write(command)
-            else:
-                arduino.write(b"S000\n")
+                #arduino.write(command)
+            #else:
+                #arduino.write(b"S000\n")
 
     cv.putText(segmented, f"FPS: {fps:.2f}", (10, 30),cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv.LINE_AA)
     cv.imshow('Segmented', segmented)
 
     if cv.waitKey(1) & 0xFF == ord('q'):
-        arduino.write(b"S000\n")
+        #arduino.write(b"S000\n")
         break
 
 camera.release()
-arduino.close()
+#arduino.close()
 cv.destroyAllWindows()
